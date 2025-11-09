@@ -1,4 +1,4 @@
-# Deployment (Dep) + Servivce (S) in 1 file , because they belong together
+# Deployment (Dep) + Service (S) in 1 file , because they belong together
 # All Deps need Ss -> group them in 1 file
 apiVersion: apps/v1
 kind: Deployment
@@ -33,10 +33,28 @@ spec:
         app: mongo
     spec:
       containers: # Create P with "mongo:5.0" image
-        - name: mongodb
-          image: mongo:5.0 # Specify your desired NGINX image version : which image will be used to create P
-          ports:
-            - containerPort: 27017
+      - name: mongodb
+        image: mongo:5.0 # Specify your desired NGINX image version : which image will be used to create P
+        ports:
+        - containerPort: 27017
+        # pass data defined in the config and secret comp
+        # when start MongoDB app : need to set username/password
+        # when MongoDB app starts : it will automatically generate username + password for mongo db
+        # can use that to access it in our cluster
+        # How pass env-vars to mongo-app running inside C
+        # Have list of env-vars with name + value
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME # env-vars name that mongodb expects
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-user # K8s find secret with name "mongo-secret" + get the value set for this key
+        - name: MONGO_INITDB_ROOT_PASSWORD # env-vars name that mongodb expects
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-password # K8s find secret with name "mongo-secret" + get the value set for this key
+
 --- # can have * YAML configurations within 1 file
 apiVersion: v1
 kind: Service
@@ -44,14 +62,15 @@ metadata:
   name: mongo-service # Endpoint used to access mongo = name of Service (s)
 spec:
   # Why "selector" : select Pods to
-  #          '-> 1. Get Request (Req)
-  #          '-> 2. Forward Req to its endpoint Pod
+  #          '-> 1. S Get Request (Req)
+  #          '-> 2. S Forward Req to its endpoint Pod
   # How S knows which Pod belongs to it ?
   #             which ones should forward the requests
   #               '-> using the same label selector
   #             This should match the label of the Pods that will belong to the service which is : that's how S+Pod will find each other
   selector:
     app: mongo
+  # S is accessible within cluster using its own IP@ + Port
   ports:
     - protocol:
       port: 27017 # Port of the Pod that belong to the S = Service Port

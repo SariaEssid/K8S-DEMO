@@ -1,4 +1,4 @@
-# Deployment (Dep) + Servivce (S) in 1 file , because they belong together
+# Deployment (Dep) + Service (S) in 1 file , because they belong together
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,10 +16,21 @@ spec:
         app: mongo
     spec:
       containers:
-        - name: mongodb
-          image: mongo:5.0
-          ports:
-            - containerPort: 27017
+      - name: mongodb
+        image: mongo:5.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME # env-vars name that mongodb expects
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-user # K8s find secret with name "mongo-secret" + get the value set for this key
+        - name: MONGO_INITDB_ROOT_PASSWORD # env-vars name that mongodb expects
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-password # K8s find secret with name "mongo-secret" + get the value set for this key
 ---
 apiVersion: v1
 kind: Service

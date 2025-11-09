@@ -1,0 +1,64 @@
+# create Dep in S for web-app for our K8s demo-app
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  labels:
+    app: webapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp
+        # name of image
+        image: nanajanashia/k8s-demo-app:v1.0 # Correct image of our web-app
+        ports:
+        - containerPort: 3000
+        # when our webapp starts : it need to connect to db
+        # I need to give this web-app info about :
+        # - db Endpoint where can it access db
+        # - which username/password to use to auth with db
+        # => configure web-app to expect these infos(values) as env-vars
+        env:
+        - name: USER_NAME # env-vars name that mongodb expects
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-user # K8s find secret with name "mongo-secret" + get the value set for this key
+        - name: USER_PWD # env-vars name that mongodb expects
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-password # K8s find secret with name "mongo-secret" + get the value set for this key
+        - name: DB_URL # db endpoint
+          valueFrom:
+            configMapKeyRef:
+              name: mongo-config
+              key: mongo-url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  # Make my app accessible from browser
+  # i want to type url and access our web-app from browser
+  # ClusterIP : default type = internal service || NodePort : external service
+  #                                                   '-> it requires third-port [nodePort]
+  type: NodePort
+  selector:
+    app: webapp
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      nodePort: 30100 # exposes the Service on each Node's IP at a static port : a port which will open on K8s nodes, on which the APP will be accessible
+                      # On Node IP@ - in node port combination : I'll be able to access S which will then access the Pods
+                      # nodePort range is actually defined in K8s : [30000 .. 32767]
