@@ -1,60 +1,34 @@
 # Deployment (Dep) + Servivce (S) in 1 file , because they belong together
-# All Deps need Ss -> group them in 1 file
 apiVersion: apps/v1
 kind: Deployment
-# Dep: has its own metadata + spec
 metadata:
   name: mongo-deployment
   labels:
     app: mongo
 spec:
-  replicas: 3 # Nbr of desired mongo pods using blue print(template)
-  # Create P replicas :
-  # '-> How Dep know which Pods belongs to it ?
-  # '-> How K8s knows which Pods belongs to which Deps ?
-  #     '=> Defines by "selector" : all the Pods that match "app: nginx" belongs to this Dep
-  #                         '-> match Pods created with this Conf
+  replicas: 3
   selector:
     matchLabels:
       app: mongo
-  # Template: main part of Dep : defines blueprint=template for pods (Ps)
-  #           conf of Ps = conf of the part within the conf of Dep => Dep manages Ps
-  #           has its own metadata + spec
-  #           configures P within Dep | In Specification of P : definition of Containers (Cs)
   template:
     metadata:
-      # Labels : key/value pairs attached to K8s resources
-      #          could be given to any K8s component
-      #          identifier (not uniqueness) : should be meaningful and relevant to users
-      #                               '->  All P replicas will have the same label
-      #                                        '->  Each P have to be unique (unique name  -> mongo-101, mongo-111, mongo-210)
-      #                                        '->             ...           (common label -> app:nginx, app:nginx, app:nginx)
       labels:
         app: mongo
     spec:
-      containers: # Create P with "mongo:5.0" image
+      containers:
         - name: mongodb
-          image: mongo:5.0 # Specify your desired NGINX image version : which image will be used to create P
+          image: mongo:5.0
           ports:
             - containerPort: 27017
---- # can have * YAML configurations within 1 file
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongo-service # Endpoint used to access mongo = name of Service (s)
+  name: mongo-service
 spec:
-  # Why "selector" : select Pods to
-  #          '-> 1. Get Request (Req)
-  #          '-> 2. Forward Req to its endpoint Pod
-  # How S knows which Pod belongs to it ?
-  #             which ones should forward the requests
-  #               '-> using the same label selector
-  #             This should match the label of the Pods that will belong to the service which is : that's how S+Pod will find each other
   selector:
     app: mongo
   ports:
     - protocol:
-      port: 27017 # Port of the Pod that belong to the S = Service Port
-      targetPort: 27017 # Container port of Dep : tells the S to which port it should forward the request  to the Pod
-                        # Should be the same as the container port =BECAUSE= that is where the APP in Pod is accessible
-                        #                                                             where the service should forward the request
+      port: 27017
+      targetPort: 27017
