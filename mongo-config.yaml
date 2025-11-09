@@ -1,3 +1,4 @@
+# This external Configuration can now be references by different Deployments
 apiVersion: v1
 kind: ConfigMap
 metadata:
