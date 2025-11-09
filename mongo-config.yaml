@@ -4,4 +4,4 @@ kind: ConfigMap
 metadata:
     name: mongo-config
 data:
-  mongo-url: mongo-service # This will be the service name of MongoDB : will be the endpoint of MongoDB
+  mongo-url: mongo-service

@@ -52,6 +52,7 @@ spec:
   # i want to type url and access our web-app from browser
   # ClusterIP : default type = internal service || NodePort : external service
   #                                                   '-> it requires third-port [nodePort]
+  # NodePort S is accessible on each WN IP@
   type: NodePort
   selector:
     app: webapp
